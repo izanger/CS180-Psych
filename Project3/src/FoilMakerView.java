@@ -45,22 +45,27 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		this.setSize(500, 500);
 		this.setVisible(true);
 		login = this.getContentPane();
-		login.setLayout(new FlowLayout());
+		login.setLayout(new BorderLayout());
 		login.add(status, BorderLayout.SOUTH);
+		JPanel northPanel = new JPanel(new BorderLayout());
 		JPanel userPanel = new JPanel(new FlowLayout());
 		userPanel.add(username);
 		userPanel.add(usernameInput);
-		login.add(userPanel);
+		northPanel.add(userPanel, BorderLayout.WEST);
 		JPanel passPanel = new JPanel(new FlowLayout());
 		passPanel.add(password);
 		passPanel.add(passwordInput);
-		login.add(passPanel);
+		northPanel.add(passPanel, BorderLayout.EAST);
 		loginButton = new JButton("Login");
 		registerButton = new JButton("Register");
-		login.add(loginButton);
+		JPanel centerPanel = new JPanel(new FlowLayout());
+		centerPanel.add(northPanel);
+		centerPanel.add(loginButton);
 		loginButton.addActionListener(this);
-		login.add(registerButton);
-		loginButton.addActionListener(this);
+		centerPanel.add(registerButton);
+		registerButton.addActionListener(this);
+		login.add(northPanel, BorderLayout.NORTH);
+		login.add(centerPanel, BorderLayout.CENTER);
 	}
 	
 	public void gameSelection(){
@@ -166,8 +171,10 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		results.setLayout(new FlowLayout());
 		JPanel round = new JPanel();
 		round.setBorder(BorderFactory.createTitledBorder("Round Result"));
+		round.add(roundResults);
 		JPanel overall = new JPanel();
 		overall.setBorder(BorderFactory.createTitledBorder("Overall Results"));
+		overall.add(overallResults);
 		nextRound = new JButton("Next Round");
 		results.add(round);
 		results.add(overall);
@@ -178,12 +185,17 @@ public class FoilMakerView extends JFrame implements ActionListener {
 	
 	public void actionPerformed(ActionEvent e) {
 		JButton pressed = (JButton) e.getSource();
+		
 		if(pressed==loginButton){
-			controller.login(model.username, model.password);
+			String name = usernameInput.getText();
+			String pass = passwordInput.getText();
+			controller.login(name, pass);
 			gameSelection();
 		}
 		else if(pressed==registerButton){
-			controller.createNewUser(model.username, model.password);
+			String name = usernameInput.getText();
+			String pass = passwordInput.getText();
+			controller.createNewUser(name,pass);
 			gameSelection();
 		}
 		else if(pressed==newGame){
@@ -232,6 +244,14 @@ public class FoilMakerView extends JFrame implements ActionListener {
 			if(options[2].isSelected())
 				controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer3);
 			controller.checkForRoundResult();
+			if(model.yupHost==true){
+				roundResults = new JTextField(model.hostRoundResultMessage);
+				overallResults = new JTextField(model.hostCumulativeScore);
+			}
+			else{
+				roundResults = new JTextField(model.player2RoundResultMessage);
+				overallResults = new JTextField(model.player2CumulativeScore);
+			}
 			gameResults();
 		}
 		else if(pressed==nextRound){
