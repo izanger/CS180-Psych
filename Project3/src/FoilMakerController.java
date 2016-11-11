@@ -1,8 +1,7 @@
 /**
  * "Controller implements network programming bits, application protocol, etc."
-
  *
- * Created by Ian on 10/27/2016.
+ *Ian
  */
 
 
@@ -18,7 +17,7 @@ public class FoilMakerController {
     public static String s = FoilMakerNetworkProtocol.SEPARATOR;
     public String msg;
     public String response;
-    
+
     public FoilMakerModel model;
     public FoilMakerView view;
 
@@ -29,16 +28,16 @@ public class FoilMakerController {
     public  BufferedReader inFromServer;
     public  String serverIP = "localhost";
     public  int serverPort = 10000;
-    
+
     public FoilMakerController(){
-    	this.outToServer = null;
-    	this.inFromServer = null;
-    	
-    	this.model = new FoilMakerModel(this);
-    	this.view = new FoilMakerView(this, model);
-    	
-    
-    
+        this.outToServer = null;
+        this.inFromServer = null;
+
+        this.model = new FoilMakerModel(this);
+        this.view = new FoilMakerView(this, model);
+
+
+
     }
 
     //sends the given string to the server, then returns what the server responds with. If something went wrong, returns "ERROR"
@@ -158,9 +157,6 @@ public class FoilMakerController {
             model.lastReceivedMessageDetail = FoilMakerNetworkProtocol.MSG_DETAIL_T.FAILURE; //shouldn't happen
     }
 
-    //@MATT - we might need to loop this in the Leader client, until a new player joins.
-    //Maybe set a loop on some sort of timer? Check every X seconds until currentNumberOfPlayers == MAX_NUMBER_OF_PLAYERS
-    //(Unless just calling .readLine() waits for input, then we only have to call it once. I'm not entirely sure.)
     public  void checkForNewPlayer() {
         String serverMsg = null;
         try {
@@ -198,8 +194,8 @@ public class FoilMakerController {
             model.lastReceivedMessageDetail = FoilMakerNetworkProtocol.MSG_DETAIL_T.FAILURE;
     }
 
-    //This method will need to be run continually by the non-host players, to check for a new question/correct answer to be provided, or to see if the game is over.
-    //The view will need to coninally check if isGameOver == true, so it knows to display a "Game Over" message.
+    //This method will need to be run  by the non-host players, to check for a new question/correct answer to be provided, or to see if the game is over.
+    //The view will need to check if isGameOver == true, so it knows to display a "Game Over" message.
     public  void checkForStatusOfNextRound() {
         String serverMsg = null;
         try {
@@ -241,7 +237,7 @@ public class FoilMakerController {
         }
     }
 
-    //Again, run continually by all players (including host) to check for the options provided by the server.
+    //Again, run by all players (including host) to check for the options provided by the server.
     //Should start running for each player individually, after they submit their playerSuggestion
     public  void checkForRoundOptions() {
         String serverMsg = null;
@@ -355,8 +351,9 @@ public class FoilMakerController {
     //MAIN
 
     public static void main(String[] args) {
-    	FoilMakerController controller = new FoilMakerController();
-    	
+        FoilMakerController controller = new FoilMakerController();
+
+        //"pick your own" port implementation
         /* if (args.length != 2) {
             System.err.println("Format: java FoilMakerController <serverIP> <serverPortNumber>");
             System.exit(0);
@@ -369,13 +366,15 @@ public class FoilMakerController {
             System.err.println("Invalid port number.\nFormat: java FoilMakerController <serverIP> <serverPortNumber>");
             System.exit(1);
         }
-        
+
 
         controller.setUpSocket(controller.serverIP, controller.serverPort);
-        
+
         */
-    	
-    	controller.setUpSocket("localhost",  9999);
+
+        controller.setUpSocket("localhost",  9999);
+
+        //testing
         /* controller.createNewUser("Steve", "1234");
         controller.login("Steve", "1234");
         System.out.println(controller.model.username);
