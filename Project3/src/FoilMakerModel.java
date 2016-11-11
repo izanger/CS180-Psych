@@ -1,11 +1,11 @@
 /**
  * "Model captures data - questions, word suggestions, etc. received from server"
  *
- * Created by Ian on 10/27/2016.
+ * Ian
  */
 public class FoilMakerModel {
-	public FoilMakerController controller;
-	
+    public FoilMakerController controller;
+
     public  FoilMakerNetworkProtocol.MSG_TYPE lastSentMessageType;
     public  FoilMakerNetworkProtocol.MSG_TYPE lastReceivedMessageType;
     public  FoilMakerNetworkProtocol.MSG_DETAIL_T lastReceivedMessageDetail;
@@ -41,8 +41,8 @@ public class FoilMakerModel {
 
     public  boolean isGameOver = false;
     public boolean yupHost;
-    
+
     public FoilMakerModel(FoilMakerController c){
-    	this.controller = c;
+        this.controller = c;
     }
 }
