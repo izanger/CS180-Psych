@@ -17,18 +17,18 @@ public class FoilMakerView extends JFrame implements ActionListener {
 	public JLabel key = new JLabel("Game Key");
 	public JLabel joinKey = new JLabel("Enter Game Key");
 	public JLabel yourSugg = new JLabel("Your Suggestion");
-	public JLabel description;
+	public JLabel description = new JLabel(" ");
 	public JLabel whatWord = new JLabel("What is the word for");
 	public JLabel optionBelow = new JLabel("Pick Your Option Below");
 	public JTextField usernameInput = new JTextField("<Username>"); 
 	public JTextField passwordInput = new JTextField("<Password>");
-	public JTextField participants;
+	public JTextField participants = new JTextField(" ");
 	public JTextField enterKey = new JTextField("<Enter Game Key>");
 	public JTextField suggestionBox = new JTextField("<Enter Suggestion>");
-	public JTextField roundResults = new JTextField("");
-	public JTextField overallResults = new JTextField("");
-	public JLabel gameKey;
-	public JRadioButton[] options = new JRadioButton[3];
+	public JTextField roundResults = new JTextField(" ");
+	public JTextField overallResults = new JTextField(" ");
+	public JLabel gameKey = new JLabel(" ");
+	public JRadioButton[] options = {new JRadioButton("Things"), new JRadioButton("More Things"), new JRadioButton("Other Things")};
 	
 	public FoilMakerView(FoilMakerController controller, FoilMakerModel model){
 		this.controller = controller;
@@ -43,7 +43,6 @@ public class FoilMakerView extends JFrame implements ActionListener {
 	public void loginScreen(){
 		Container login;
 		this.setSize(500, 500);
-		this.setVisible(true);
 		login = this.getContentPane();
 		login.setLayout(new BorderLayout());
 		login.add(status, BorderLayout.SOUTH);
@@ -66,12 +65,12 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		registerButton.addActionListener(this);
 		login.add(northPanel, BorderLayout.NORTH);
 		login.add(centerPanel, BorderLayout.CENTER);
+		this.setVisible(true);
 	}
 	
 	public void gameSelection(){
 		Container game;
 		this.setSize(500, 500);
-		this.setVisible(true);
 		game = this.getContentPane();
 		game.setLayout(new FlowLayout());
 		newGame = new JButton("Start New Game");
@@ -80,12 +79,12 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		newGame.addActionListener(this);
 		game.add(joinGame);
 		joinGame.addActionListener(this);
+		this.setVisible(true);
 	}
 	
 	public void startNewGame(){
 		Container start;
 		this.setSize(500, 500);
-		this.setVisible(true);
 		start = this.getContentPane();
 		start.setLayout(new FlowLayout());
 		start.add(key);
@@ -95,13 +94,12 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		startGame = new JButton("Start Game");
 		start.add(startGame);
 		startGame.addActionListener(this);
-		
+		this.setVisible(true);		
 	}
 	
 	public void joinAGame(){
 		Container join;
 		this.setSize(500, 500);
-		this.setVisible(true);
 		join = this.getContentPane();
 		join.setLayout(new FlowLayout());
 		join.add(joinKey);
@@ -109,43 +107,43 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		jGame = new JButton("Join Game");
 		join.add(jGame);
 		jGame.addActionListener(this);
+		this.setVisible(true);
 	}
 	
 	public void waitForLeader(){
 		Container wait;
 		this.setSize(1000, 1000);
-		this.setVisible(true);
 		wait = this.getContentPane();
-		wait.setLayout(new FlowLayout());
+		wait.setLayout(new BorderLayout());
 		JLabel waiting = new JLabel("Waiting for Leader...");
-		wait.add(waiting);
+		wait.add(waiting, BorderLayout.CENTER);
+		this.setVisible(true);
 	}
 	
 	public void launchGame(){
 		Container word;
 		this.setSize(1000, 1000);
-		this.setVisible(true);
 		word = this.getContentPane();
-		word.setLayout(new FlowLayout());
+		word.setLayout(new BorderLayout());
 		JPanel question = new JPanel();
-		question.setLayout(new FlowLayout());
-		question.add(whatWord);
-		question.add(description);
+		question.setLayout(new BorderLayout());
+		question.add(whatWord, BorderLayout.NORTH);
+		question.add(description, BorderLayout.CENTER);
 		JPanel suggestion = new JPanel();
 		suggestion.setLayout(new FlowLayout());
-		suggestion.add(yourSugg);
+		suggestion.setBorder(BorderFactory.createTitledBorder("Your Suggestion"));
 		suggestion.add(suggestionBox);
 		submit = new JButton("Submit Suggestion");
-		word.add(question);
-		word.add(suggestion);
-		word.add(submit);
+		word.add(question, BorderLayout.NORTH);
+		word.add(suggestion, BorderLayout.CENTER);
+		word.add(submit, BorderLayout.PAGE_END);
 		submit.addActionListener(this);
+		this.setVisible(true);
 	}
 	
 	public void pickOption(){
 		Container optionCon;
 		this.setSize(1000, 1000);
-		this.setVisible(true);
 		optionCon = this.getContentPane();
 		optionCon.setLayout(new FlowLayout());
 		optionCon.add(optionBelow);
@@ -161,12 +159,12 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		optionCon.add(options[1]);
 		optionCon.add(options[2]);
 		optionCon.add(submitOption);		
+		this.setVisible(true);
 	}
 	
 	public void gameResults(){
 		Container results;
 		this.setSize(1000, 1000);
-		this.setVisible(true);
 		results = this.getContentPane();
 		results.setLayout(new FlowLayout());
 		JPanel round = new JPanel();
@@ -180,6 +178,7 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		results.add(overall);
 		results.add(nextRound);
 		nextRound.addActionListener(this);
+		this.setVisible(true);
 	}
 	
 	
