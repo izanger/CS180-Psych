@@ -266,3 +266,4 @@ public class FoilMakerView extends JFrame implements ActionListener {
 	}
 	
 }
+
