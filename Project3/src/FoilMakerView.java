@@ -185,85 +185,85 @@ public class FoilMakerView extends JFrame implements ActionListener {
 	
 	
 	public void actionPerformed(ActionEvent e) {
-		JButton pressed = (JButton) e.getSource();
-		
-		if(pressed==loginButton){
-			String name = usernameInput.getText();
-			String pass = passwordInput.getText();
-			controller.login(name, pass);
-			gameSelection();
-		}
-		else if(pressed==registerButton){
-			String name = usernameInput.getText();
-			String pass = passwordInput.getText();
-			controller.createNewUser(name,pass);
-			gameSelection();
-		}
-		else if(pressed==newGame){
-			participants = new JTextField(model.username);
-			participants.setBorder(BorderFactory.createTitledBorder("Participants"));
-			controller.startNewGame(model.userToken);
-			startNewGame();
-			
-		}
-		else if(pressed==joinGame){
-			participants = new JTextField(model.username + "\n" + model.player2Username);
-			String enkey = enterKey.getText();
-			controller.joinGame(model.userToken, enkey);
-			joinAGame();
-		}
-		else if(pressed==startGame){
-			while(model.currentNumberOfPlayers<2){
-				controller.checkForNewPlayer();
-			}
-			controller.allParticipantsHaveJoined(model.userToken, model.gameToken);
-			controller.checkForStatusOfNextRound();
-			description = new JLabel(model.currentQuestion);
-			launchGame();
-		}
-		else if(pressed==jGame){
-			waitForLeader();
-			controller.allParticipantsHaveJoined(model.userToken, model.gameToken);
-			controller.checkForStatusOfNextRound();
-			description = new JLabel(model.currentQuestion);
-			launchGame();
-		}
-		else if(pressed==submit){
-			String newSuggestion = suggestionBox.getText();
-			controller.playerSuggestion(model.userToken, model.gameToken, newSuggestion);
-			controller.checkForRoundOptions();
-			options[0] = new JRadioButton(model.possibleAnswer1);
-			options[1] = new JRadioButton(model.possibleAnswer2);
-			options[2] = new JRadioButton(model.possibleAnswer3);
-			pickOption();
-		}
-		else if(pressed==submitOption){
-			if(options[0].isSelected())
-				controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer1);
-			if(options[1].isSelected())
-				controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer2);
-			if(options[2].isSelected())
-				controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer3);
-			controller.checkForRoundResult();
-			if(model.yupHost==true){
-				roundResults = new JTextField(model.hostRoundResultMessage);
-				overallResults = new JTextField(model.hostCumulativeScore);
-			}
-			else{
-				roundResults = new JTextField(model.player2RoundResultMessage);
-				overallResults = new JTextField(model.player2CumulativeScore);
-			}
-			gameResults();
-		}
-		else if(pressed==nextRound){
-			if(model.isGameOver==true){
-				controller.logOut();
-			}
-			controller.checkForStatusOfNextRound();
-			description = new JLabel(model.currentQuestion);
-			launchGame();
-		}
-	}
-	
+        JButton pressed = (JButton) e.getSource();
+
+        if(pressed==loginButton){
+            String name = usernameInput.getText();
+            String pass = passwordInput.getText();
+            controller.login(name, pass);
+            gameSelection();
+        }
+        else if(pressed==registerButton){
+            String name = usernameInput.getText();
+            String pass = passwordInput.getText();
+            controller.createNewUser(name,pass);
+
+        }
+        else if(pressed==newGame){
+
+
+            controller.startNewGame(model.userToken);
+            participants = new JTextField("");
+            participants.setBorder(BorderFactory.createTitledBorder("Participants"));
+            startNewGame();
+
+        }
+        else if(pressed==joinGame){
+           // participants = new JTextField(model.username + "\n" + model.player2Username);
+            joinAGame();
+
+        }
+        else if(pressed==startGame){
+            controller.allParticipantsHaveJoined(model.userToken, model.gameToken);
+            controller.checkForStatusOfNextRound();
+            description = new JLabel(model.currentQuestion);
+            launchGame();
+        }
+        else if(pressed==jGame){
+            String enkey = enterKey.getText();
+            controller.joinGame(model.userToken, enkey);
+
+            waitForLeader();
+            controller.checkForStatusOfNextRound();
+            description = new JLabel(model.currentQuestion);
+            launchGame();
+        }
+        else if(pressed==submit){
+            String newSuggestion = suggestionBox.getText();
+            controller.playerSuggestion(model.userToken, model.gameToken, newSuggestion);
+            controller.checkForRoundOptions();
+            options[0] = new JRadioButton(model.possibleAnswer1);
+            options[1] = new JRadioButton(model.possibleAnswer2);
+            options[2] = new JRadioButton(model.possibleAnswer3);
+            pickOption();
+        }
+        else if(pressed==submitOption){
+            if(options[0].isSelected())
+                controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer1);
+            if(options[1].isSelected())
+                controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer2);
+            if(options[2].isSelected())
+                controller.playerChoice(model.userToken, model.gameToken, model.possibleAnswer3);
+            controller.checkForRoundResult();
+            if(model.yupHost==true){
+                roundResults = new JTextField(model.hostRoundResultMessage);
+                overallResults = new JTextField(model.hostCumulativeScore);
+            }
+            else{
+                roundResults = new JTextField(model.player2RoundResultMessage);
+                overallResults = new JTextField(model.player2CumulativeScore);
+            }
+            gameResults();
+        }
+        else if(pressed==nextRound){
+            if(model.isGameOver==true){
+                controller.logOut();
+            }
+            controller.checkForStatusOfNextRound();
+            description = new JLabel(model.currentQuestion);
+            launchGame();
+        }
+    }
+
 }
 
