@@ -95,6 +95,8 @@ public class FoilMakerView extends JFrame implements ActionListener {
 		start.add(startGame);
 		startGame.addActionListener(this);
 		this.setVisible(true);		
+		controller.checkForNewPlayer();
+		participants = new JTextField(model.player2Username);
 	}
 	
 	public void joinAGame(){
