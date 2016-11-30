@@ -1,3 +1,5 @@
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+
 import  java.io.*;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
@@ -9,7 +11,9 @@ import java.util.HashMap;
  * Created by ianzanger on 11/23/16.
  */
 public class Server {
-    private static ArrayList<User> registeredUsers = new ArrayList<>();
+    public static ArrayList<User> registeredUsers = new ArrayList<>();
+    public static ArrayList<String> wordleQuestions = new ArrayList<>();
+    public static ArrayList<String> wordleAnswers = new ArrayList<>();
 
     //TODO: Implement hashmap to keep track of games, using gameToken as identifier?
 
@@ -19,7 +23,7 @@ public class Server {
 
 
     //Reads UserDatabase file and populates the registeredUsers arraylist with Users. Will run at startup.
-    public static void SetUpRegisteredUsers() {
+    public static void setUpRegisteredUsers() {
         String username;
         String password;
         int cumulativeScore;
@@ -58,14 +62,45 @@ public class Server {
                 try {
                     in.close();
                 } catch (IOException e) {
-                    System.out.println("Error closing BufferedReader");
+                    System.out.println("Error closing BufferedReader of setUpRegisteredUsers()");
                 }
             }
         }
 
     }
 
+    //Reads WordleDeck file and populates wordleQuestions and wordleAnswers. Will run at startup.
+    public static void setUpWordleArrayLists() {
+        String latestLine;
+        String question;
+        String answer;
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new FileReader(new File("/Users/ianzanger/IdeaProjects/cs180/Project4/src/WordleDeck.txt")));
+            while ((latestLine = in.readLine()) != null) {
+                question = latestLine.substring(0, latestLine.indexOf(':'));
+                answer = latestLine.substring(latestLine.indexOf(':') + 1, latestLine.length());
+                wordleQuestions.add(question);
+                wordleAnswers.add(answer);
+            }
+
+        } catch (FileNotFoundException e) {
+            System.out.println("Error accessing WordleDeck file. \n" + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error reading line from file.\n" + e.getMessage());
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    System.out.println("Error closing BufferedReader of setUpWordleArrayLists()");
+                }
+            }
+        }
+    }
+
     //Updates UserDatabase file with new values for scores, registered users, etc. Should be called every time registeredUsers is added to or altered.
+    //TODO: call every time registeredUsers is altered
     public static void writeUserDatabase() {
         BufferedWriter out = null;
 
@@ -91,10 +126,6 @@ public class Server {
 
         }
 
-
-    }
-
-    public static void readInWordleDeck() {
 
     }
 
@@ -145,16 +176,19 @@ public class Server {
         int portNumber;
 
         if(args.length !=1) {
-            System.err.println("Usage: java BoilerServer <port number>");
+            System.err.println("Usage: java Server <port number>");
             System.exit(1);
         }
         portNumber = Integer.parseInt(args[0]);
 
         try {
+            setUpRegisteredUsers();
+            setUpWordleArrayLists();
             serveClients(portNumber);
         } catch (IOException e) {
             System.err.println("Unexpected error: " + e.getMessage());
         }
+
     }
 
 
