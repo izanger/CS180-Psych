@@ -63,7 +63,7 @@ public class RequestHandler extends Thread {
             if (latestLine.contains("CREATENEWUSER")) {
                 registerNewUser(latestLine);
             } else if (latestLine.contains("LOGIN")) {
-                login(latestLine);//TODO: login stuff
+                login(latestLine);
             } else {
                 out.println("RESPONSE--CREATENEWUSER--INVALIDMESSAGEFORMAT");
                 registerOrLogin();
@@ -76,32 +76,56 @@ public class RequestHandler extends Thread {
         //TODO: Implement login function, then call a new method for the next expected message type
 
     }
-    
-    private void login(String s){
-    	String latestLine = s;
-    	String username, password;
-    	
-    	if(latestLine.replaceAll("--", "").length() != (latestLine.length() -4)){
-    		out.println("RESPONSE--LOGIN--INVALIDMESSAGEFORMAT");
-    		registerOrLogin();
-    		return;
-    	}
-    	
-    	username = latestLine.substring(15, latestLine.indexOf("--", 15));
-    	password = latestLine;
-    	for(int i=0; i<Server.registeredUsers.size(); i++){
-    		if (!isValidUsername(username)) {
-                out.println("RESPONSE--LOGIN--UNKNOWNUSER--");
-                registerOrLogin();
-            } else if (!isValidPassword(password)) {
-                out.println("RESPONSE--LOGIN--INVALIDUSERPASSWORD--");
-                registerOrLogin();
-            } else {
-            	out.println("RESPONSE--LOGIN--SUCCESS--");
-                //Start A New Game or Join Game Option
-            }
 
-    	}
+    private void login(String s){
+        String latestLine = s;
+        String username, password;
+        User newUser;
+        int chosenUserIndex = 0;
+
+        if(latestLine.replaceAll("--", "").length() != (latestLine.length() -4)){
+            out.println("RESPONSE--LOGIN--INVALIDMESSAGEFORMAT");
+            registerOrLogin();
+            return;
+        }
+
+        username = latestLine.substring(7, latestLine.indexOf("--", 7));
+        latestLine = latestLine.replaceFirst("LOGIN--" + username + "--", "");
+        password = latestLine;
+
+        if (thisUser != null) {
+            out.println("RESPONSE--LOGIN--USERALREADYLOGGEDIN");
+            registerOrLogin();
+            return;
+        }
+
+        for (int i = 0; i < Server.registeredUsers.size(); i++) {
+            if (username.equals(Server.registeredUsers.get(i).getUsername()) ) {
+                chosenUserIndex = i;
+                break;
+            }
+            if (i == Server.registeredUsers.size() - 1) {
+                out.println("RESPONSE--LOGIN--UNKNOWNUSER");
+                registerOrLogin();
+                return;
+            }
+        }
+        if (!password.equals(Server.registeredUsers.get(chosenUserIndex).getPassword())) {
+            out.println("RESPONSE--LOGIN--INVALIDUSERPASSWORD");
+            registerOrLogin();
+            return;
+        } else {
+            out.println("RESPONSE--LOGIN--SUCCESS--" + generateUserToken());
+            thisUser = Server.registeredUsers.get(chosenUserIndex);
+            //TODO: Start a new game or join a game
+
+        }
+    }
+
+    private String generateUserToken() {
+        //TODO: This
+        //TODO: add userToken to User class?
+        return "";
     }
 
     private void registerNewUser(String s) {
