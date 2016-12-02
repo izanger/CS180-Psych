@@ -15,6 +15,7 @@ public class RequestHandler extends Thread {
     private int clientId;
     private PrintWriter out = null;
     private BufferedReader in = null;
+    private User thisUser;
 
     static HashMap<String, User> loggedInUsers = new HashMap<String, User>(); //collection of Users that are logged in, defined by their unique IDs
     //TODO: Implement Hashmap for games, using gameID as key.
@@ -83,6 +84,7 @@ public class RequestHandler extends Thread {
         if (latestLine.replaceAll("--", "").length() != (latestLine.length() - 4)) {
             out.println("RESPONSE--CREATENEWUSER--INVALIDMESSAGEFORMAT");
             registerOrLogin();
+            return;
         }
 
         username = latestLine.substring(15, latestLine.indexOf("--",15));

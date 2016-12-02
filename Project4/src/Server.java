@@ -101,7 +101,7 @@ public class Server {
 
     //Updates UserDatabase file with new values for scores, registered users, etc. Should be called every time registeredUsers is added to or altered.
     //TODO: call every time registeredUsers is altered
-    public static void writeUserDatabase() {
+    public static synchronized void writeUserDatabase() {
         BufferedWriter out = null;
 
         try {
