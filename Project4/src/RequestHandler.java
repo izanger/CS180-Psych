@@ -1,4 +1,4 @@
-import com.sun.deploy.util.StringUtils;
+
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -63,7 +63,7 @@ public class RequestHandler extends Thread {
             if (latestLine.contains("CREATENEWUSER")) {
                 registerNewUser(latestLine);
             } else if (latestLine.contains("LOGIN")) {
-                //TODO: login stuff
+                login(latestLine);//TODO: login stuff
             } else {
                 out.println("RESPONSE--CREATENEWUSER--INVALIDMESSAGEFORMAT");
                 registerOrLogin();
@@ -75,6 +75,33 @@ public class RequestHandler extends Thread {
 
         //TODO: Implement login function, then call a new method for the next expected message type
 
+    }
+    
+    private void login(String s){
+    	String latestLine = s;
+    	String username, password;
+    	
+    	if(latestLine.replaceAll("--", "").length() != (latestLine.length() -4)){
+    		out.println("RESPONSE--LOGIN--INVALIDMESSAGEFORMAT");
+    		registerOrLogin();
+    		return;
+    	}
+    	
+    	username = latestLine.substring(15, latestLine.indexOf("--", 15));
+    	password = latestLine;
+    	for(int i=0; i<Server.registeredUsers.size(); i++){
+    		if (!isValidUsername(username)) {
+                out.println("RESPONSE--LOGIN--UNKNOWNUSER--");
+                registerOrLogin();
+            } else if (!isValidPassword(password)) {
+                out.println("RESPONSE--LOGIN--INVALIDUSERPASSWORD--");
+                registerOrLogin();
+            } else {
+            	out.println("RESPONSE--LOGIN--SUCCESS--");
+                //Start A New Game or Join Game Option
+            }
+
+    	}
     }
 
     private void registerNewUser(String s) {
