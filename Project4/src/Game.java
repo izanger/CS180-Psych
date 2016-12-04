@@ -1,4 +1,7 @@
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 /**
  * Created by ianzanger on 11/30/16.
@@ -6,15 +9,22 @@ import java.util.ArrayList;
 public class Game {
     private User leader;
     private ArrayList<User> players; //used to keep track of players in this game
-    private String gameID;
-    private static ArrayList<Game> games = new ArrayList<>();
+    private String gameToken;
+    public PrintWriter leaderPrintWriter = null;
+    public boolean gameReadyToBegin = false;
+    public ArrayList<String> randomizedWordleQuestions;
+    public ArrayList<String> randomizedWordleAnswers;
+    public static ArrayList<Game> games = new ArrayList<>();
 
 
-    public Game(User leader) {
+
+    public Game(User leader, String gameToken) {
         this.leader = leader;
+        this.gameToken = gameToken;
         players = new ArrayList<User>();
         players.add(leader);
         games.add(this);
+        leaderPrintWriter = leader.getThisUsersHandler().out; //This is sketchy
     }
 
     public User getLeader() {
@@ -29,11 +39,19 @@ public class Game {
         players.add(player);
     }
 
-    public void setGameID(String id) {
-        this.gameID = id;
+    public String getGameToken() {
+        return gameToken;
     }
 
-    public String getGameID() {
-        return gameID;
+    public PrintWriter getLeaderPrintWriter() {
+        return leaderPrintWriter;
+    }
+
+    public void setUpRandomWordleLists() {
+        randomizedWordleQuestions = Server.wordleQuestions;
+        randomizedWordleAnswers = Server.wordleAnswers;
+        long s = System.nanoTime();
+        Collections.shuffle(randomizedWordleQuestions, new Random(s));
+        Collections.shuffle(randomizedWordleAnswers, new Random(s));
     }
 }

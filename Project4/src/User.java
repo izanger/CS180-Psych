@@ -5,6 +5,9 @@ public class User {
     private String username;
     private String password;
     private int cumulativeScore, numTimesFooledOthers, numTimesFooledByOthers;
+    private String userToken;
+    private RequestHandler thisUsersHandler;
+    private Game currentGame;
 
     public User(String username, String password) {
         this.username = username;
@@ -60,5 +63,29 @@ public class User {
 
     public void setNumTimesFooledByOthers(int numTimesFooledByOthers) {
         this.numTimesFooledByOthers = numTimesFooledByOthers;
+    }
+
+    public String getUserToken() {
+        return userToken;
+    }
+
+    public void setUserToken(String userToken) {
+        this.userToken = userToken;
+    }
+
+    public void setThisUsersHandler(RequestHandler r) {
+        thisUsersHandler = r;
+    }
+
+    public RequestHandler getThisUsersHandler() {
+        return thisUsersHandler;
+    }
+
+    public Game getCurrentGame() {
+        return currentGame;
+    }
+
+    public void setCurrentGame(Game currentGame) {
+        this.currentGame = currentGame;
     }
 }
