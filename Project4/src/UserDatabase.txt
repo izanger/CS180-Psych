@@ -1,2 +1,4 @@
-Bob:bob123:30:2:3
-Alice:alice123:20:3:2
+Bob:bob123:360:10:9
+Alice:alice123:195:16:13
+Ian:Ian123:295:5:8
+Frank:Frank123:140:10:11

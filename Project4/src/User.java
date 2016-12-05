@@ -8,6 +8,13 @@ public class User {
     private String userToken;
     private RequestHandler thisUsersHandler;
     private Game currentGame;
+    public volatile boolean hasSentSuggestion = false;
+    public volatile boolean hasChosen = false;
+    public String playerChoice;
+    public String suggestion;
+    public String resultMessage = "";
+    public String correctAnswer;
+    public String roundOptionsMessage;
 
     public User(String username, String password) {
         this.username = username;
@@ -45,7 +52,7 @@ public class User {
         return cumulativeScore;
     }
 
-    public void setCumulativeScore(int cumulativeScore) {
+    public synchronized void setCumulativeScore(int cumulativeScore) {
         this.cumulativeScore = cumulativeScore;
     }
 
@@ -53,7 +60,7 @@ public class User {
         return numTimesFooledOthers;
     }
 
-    public void setNumTimesFooledOthers(int numTimesFooledOthers) {
+    public synchronized void setNumTimesFooledOthers(int numTimesFooledOthers) {
         this.numTimesFooledOthers = numTimesFooledOthers;
     }
 
@@ -61,7 +68,7 @@ public class User {
         return numTimesFooledByOthers;
     }
 
-    public void setNumTimesFooledByOthers(int numTimesFooledByOthers) {
+    public synchronized void setNumTimesFooledByOthers(int numTimesFooledByOthers) {
         this.numTimesFooledByOthers = numTimesFooledByOthers;
     }
 

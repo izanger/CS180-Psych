@@ -8,20 +8,26 @@ import java.util.Random;
  */
 public class Game {
     private User leader;
-    private ArrayList<User> players; //used to keep track of players in this game
+    public ArrayList<User> players; //used to keep track of players in this game
     private String gameToken;
     public PrintWriter leaderPrintWriter = null;
-    public boolean gameReadyToBegin = false;
+    public volatile boolean gameReadyToBegin = false;
     public ArrayList<String> randomizedWordleQuestions;
     public ArrayList<String> randomizedWordleAnswers;
     public static ArrayList<Game> games = new ArrayList<>();
+    public ArrayList<String> playerSuggestions = new ArrayList<>();
+    public volatile boolean gameLogicDone = false;
+    public volatile String roundResultMessage;
+    public int wordleListCounter = 0;
+    public int randomizedWordleListLength;
+
 
 
 
     public Game(User leader, String gameToken) {
         this.leader = leader;
         this.gameToken = gameToken;
-        players = new ArrayList<User>();
+        players = new ArrayList<>();
         players.add(leader);
         games.add(this);
         leaderPrintWriter = leader.getThisUsersHandler().out; //This is sketchy
@@ -53,5 +59,13 @@ public class Game {
         long s = System.nanoTime();
         Collections.shuffle(randomizedWordleQuestions, new Random(s));
         Collections.shuffle(randomizedWordleAnswers, new Random(s));
+    }
+
+    public synchronized void addPlayerSuggestion(String suggestion) {
+        playerSuggestions.add(suggestion);
+    }
+
+    public void clearPlayerSuggestions() {
+        playerSuggestions.clear();
     }
 }

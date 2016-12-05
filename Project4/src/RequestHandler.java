@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -18,8 +20,6 @@ public class RequestHandler extends Thread {
     public PrintWriter out = null;
     private BufferedReader in = null;
     private User thisUser;
-    public static int wordleListCounter = 0;
-    public static int randomizedWordleListLength;
 
     static HashMap<String, User> loggedInUsers = new HashMap<String, User>(); //collection of Users that are logged in, defined by their unique IDs
     //TODO: Implement Hashmap for games, using gameID as key. ?Maybe
@@ -87,7 +87,7 @@ public class RequestHandler extends Thread {
         int chosenUserIndex = 0;
 
         if(latestLine.replaceAll("--", "").length() != (latestLine.length() -4)){
-            out.println("RESPONSE--LOGIN--INVALIDMESSAGEFORMAT");
+            out.println("RESPONSE--LOGIN--INVALIDMESSAGEFORMAT--");
             registerOrLogin();
             return;
         }
@@ -97,7 +97,7 @@ public class RequestHandler extends Thread {
         password = latestLine;
 
         if (thisUser != null) {
-            out.println("RESPONSE--LOGIN--USERALREADYLOGGEDIN");
+            out.println("RESPONSE--LOGIN--USERALREADYLOGGEDIN--");
             registerOrLogin();
             return;
         }
@@ -108,13 +108,13 @@ public class RequestHandler extends Thread {
                 break;
             }
             if (i == Server.registeredUsers.size() - 1) {
-                out.println("RESPONSE--LOGIN--UNKNOWNUSER");
+                out.println("RESPONSE--LOGIN--UNKNOWNUSER--");
                 registerOrLogin();
                 return;
             }
         }
         if (!password.equals(Server.registeredUsers.get(chosenUserIndex).getPassword())) {
-            out.println("RESPONSE--LOGIN--INVALIDUSERPASSWORD");
+            out.println("RESPONSE--LOGIN--INVALIDUSERPASSWORD--");
             registerOrLogin();
             return;
         } else {
@@ -213,7 +213,11 @@ public class RequestHandler extends Thread {
             thisUser.setCurrentGame(findGame(submittedGameToken));
             thisUser.getCurrentGame().addPlayer(thisUser);
             thisUser.getCurrentGame().getLeaderPrintWriter().println("NEWPARTICIPANT--" + thisUser.getUsername() + "--" + thisUser.getCumulativeScore());
-            while(!thisUser.getCurrentGame().gameReadyToBegin){} //Loop until game is ready
+            out.println("RESPONSE--JOINGAME--SUCCESS--" + submittedGameToken);
+            System.out.println("Leader: " + thisUser.getCurrentGame().getLeader().getUsername());
+            synchronized (this) {
+                while(!thisUser.getCurrentGame().gameReadyToBegin); //Loop until game is ready
+            }
             sendNewWordOrQuit();
             return;
         }
@@ -240,8 +244,11 @@ public class RequestHandler extends Thread {
                 } else {
                     //success
                     thisUser.getCurrentGame().setUpRandomWordleLists();
-                    randomizedWordleListLength = thisUser.getCurrentGame().randomizedWordleQuestions.size();
-                    thisUser.getCurrentGame().gameReadyToBegin = true;
+                    thisUser.getCurrentGame().randomizedWordleListLength = thisUser.getCurrentGame().randomizedWordleQuestions.size();
+                    synchronized(this) {
+                        thisUser.getCurrentGame().gameReadyToBegin = true;
+                    }
+
                     sendNewWordOrQuit();
                     return;
                 }
@@ -258,32 +265,384 @@ public class RequestHandler extends Thread {
 
     //Called by both leaders and players. When new round begins, everyone returns here to either start new round or quit.
     public void sendNewWordOrQuit() {
-        if (wordleListCounter < randomizedWordleListLength) {
-            out.println("NEWGAMEWORD--" + thisUser.getCurrentGame().randomizedWordleQuestions.get(wordleListCounter) + "--" + thisUser.getCurrentGame().randomizedWordleAnswers.get(wordleListCounter));
+        for(int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+            synchronized (this) {
+                thisUser.getCurrentGame().players.get(i).hasSentSuggestion = false;
+            }
+
+        }
+        synchronized (this) {
+            thisUser.getCurrentGame().gameLogicDone = false;
+        }
+
+
+        if (thisUser.getCurrentGame().wordleListCounter < thisUser.getCurrentGame().randomizedWordleListLength) {
+            out.println("NEWGAMEWORD--" + thisUser.getCurrentGame().randomizedWordleQuestions.get(thisUser.getCurrentGame().wordleListCounter) + "--" + thisUser.getCurrentGame().randomizedWordleAnswers.get(thisUser.getCurrentGame().wordleListCounter));
+            System.out.println("Just sent: " + "NEWGAMEWORD--" + thisUser.getCurrentGame().randomizedWordleQuestions.get(thisUser.getCurrentGame().wordleListCounter) + "--" + thisUser.getCurrentGame().randomizedWordleAnswers.get(thisUser.getCurrentGame().wordleListCounter));
             if (thisUser == thisUser.getCurrentGame().getLeader()) {
+                thisUser.getCurrentGame().playerSuggestions.add(thisUser.getCurrentGame().randomizedWordleAnswers.get(thisUser.getCurrentGame().wordleListCounter));
+                //synchronized (this) {
+                    //thisUser.getCurrentGame().correctAnswer = thisUser.getCurrentGame().randomizedWordleAnswers.get(wordleListCounter);
+
+                    for(int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+                        thisUser.getCurrentGame().players.get(i).correctAnswer = thisUser.getCurrentGame().randomizedWordleAnswers.get(thisUser.getCurrentGame().wordleListCounter);
+                    }
+                //}
+
                 try {
                     sleep(2000); //Concern is, leader could be slightly ahead and get through this code, throwing off count before players have utilized it.
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
 
-                wordleListCounter++;
-
-                //TODO: GoToNextLeaderMethod - accept suggestion from leader. Then check continually if everyone has sent their suggestions.
-                //TODO: Then, set master static message, and set allReady to TRUE, so clients know to send it. Repeat for choices.
+                thisUser.getCurrentGame().wordleListCounter++;
+                receiveLeaderSuggestion();
                 return;
             }
-            //TODO: GoToNextPlayerMethod - accept suggestion, then set a "ready" boolean to TRUE. Then constantly check if allReady boolean is true yet
+            receivePlayerSuggestion();
             return;
 
         } else {
-            //TODO: Everybody quit game.
+            System.out.println("made it to logout");
+            logout();
+            System.out.println("made it past logout");
+            return;
         }
 
 
 
 
 
+    }
+    //leader only
+    public void receiveLeaderSuggestion() {
+        try {
+            String latestLine = in.readLine();
+            String submittedUserToken, submittedGameToken, playerSuggestion;
+
+            if (!latestLine.contains("PLAYERSUGGESTION")) {
+                out.println("RESPONSE--PLAYERSUGGESTION--UNEXPECTEDMESSAGETYPE--");
+                receiveLeaderSuggestion();
+                return;
+            }
+            if(latestLine.replaceAll("--", "").length() != (latestLine.length() - 6)){
+                out.println("RESPONSE--PLAYERSUGGESTION--INVALIDMESSAGEFORMAT--");
+                receiveLeaderSuggestion();
+                return;
+            }
+
+            submittedUserToken = latestLine.substring(18, latestLine.indexOf("--", 18));
+            latestLine = latestLine.replaceFirst("PLAYERSUGGESTION--" + submittedUserToken + "--", "");
+            submittedGameToken = latestLine.substring(0, latestLine.indexOf("--"));
+            latestLine = latestLine.replaceFirst(submittedGameToken + "--", "");
+            playerSuggestion = latestLine;
+            if (latestLine.contains("--")) {
+                System.err.println("Something is wonky with parsing the leader's PLAYERSUGGESTION message. Extra hyphens at the end?");
+            }
+
+            if (!submittedUserToken.equals(thisUser.getUserToken())) {
+                out.println("RESPONSE--PLAYERSUGGESTION--USERNOTLOGGEDIN--");
+                receiveLeaderSuggestion();
+                return;
+            } else if (!submittedGameToken.equals(thisUser.getCurrentGame().getGameToken())) {
+                out.println("RESPONSE--PLAYERSUGGESTION--INVALIDGAMETOKEN--");
+                receiveLeaderSuggestion();
+                return;
+            } else {
+                thisUser.getCurrentGame().addPlayerSuggestion(playerSuggestion);
+                thisUser.suggestion = playerSuggestion;
+                synchronized (this) {
+                    thisUser.hasSentSuggestion = true;
+                }
+
+
+                synchronized (this) {
+                    while (!checkIfAllSuggestionsAreIn());
+                }
+
+
+
+
+
+
+
+                setUpRoundOptions();
+                /*
+                synchronized (this) {
+                    thisUser.getCurrentGame().allSuggestionsAreIn = true;
+                }
+                */
+
+                sendRoundOptions();
+                return;
+            }
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    //players only
+    public void receivePlayerSuggestion() {
+        try {
+            String latestLine = in.readLine();
+            String submittedUserToken, submittedGameToken, playerSuggestion;
+
+            if (!latestLine.contains("PLAYERSUGGESTION")) {
+                out.println("RESPONSE--PLAYERSUGGESTION--UNEXPECTEDMESSAGETYPE--");
+                receivePlayerSuggestion();
+                return;
+            }
+            if(latestLine.replaceAll("--", "").length() != (latestLine.length() - 6)){
+                out.println("RESPONSE--PLAYERSUGGESTION--INVALIDMESSAGEFORMAT--");
+                receivePlayerSuggestion();
+                return;
+            }
+
+            submittedUserToken = latestLine.substring(18, latestLine.indexOf("--", 18));
+            latestLine = latestLine.replaceFirst("PLAYERSUGGESTION--" + submittedUserToken + "--", "");
+            submittedGameToken = latestLine.substring(0, latestLine.indexOf("--"));
+            latestLine = latestLine.replaceFirst(submittedGameToken + "--", "");
+            playerSuggestion = latestLine;
+            if (latestLine.contains("--")) {
+                System.err.println("Something is wonky with parsing the PLAYERSUGGESTION message. Extra hyphens at the end?");
+            }
+
+            if (!submittedUserToken.equals(thisUser.getUserToken())) {
+                out.println("RESPONSE--PLAYERSUGGESTION--USERNOTLOGGEDIN--");
+                receivePlayerSuggestion();
+                return;
+            } else if (!submittedGameToken.equals(thisUser.getCurrentGame().getGameToken())) {
+                out.println("RESPONSE--PLAYERSUGGESTION--INVALIDGAMETOKEN--");
+                receivePlayerSuggestion();
+                return;
+            } else {
+                thisUser.getCurrentGame().addPlayerSuggestion(playerSuggestion);
+                thisUser.suggestion = playerSuggestion;
+
+                synchronized (this) {
+                    thisUser.hasSentSuggestion = true;
+                }
+                synchronized (this) {
+                    //while(!thisUser.getCurrentGame().allSuggestionsAreIn);
+                    System.out.println("Made it to while loop!");
+                    while(!checkIfAllSuggestionsAreIn());
+                    System.out.println("Made it past while loop!");
+                }
+
+                sendRoundOptions();
+                return;
+            }
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    //everyone calls this method- leader and players
+    public void sendRoundOptions() {
+        synchronized (this) {
+            out.println(thisUser.roundOptionsMessage);
+        }
+
+        getPlayerAndLeaderChoice();
+        return;
+    }
+
+    //everyone calls this method
+    public void getPlayerAndLeaderChoice() {
+        try {
+            String latestLine = in.readLine();
+            String submittedUserToken, submittedGameToken, playerChoice;
+
+            if (!latestLine.contains("PLAYERCHOICE")) {
+                out.println("RESPONSE--PLAYERCHOICE--UNEXPECTEDMESSAGETYPE--");
+                getPlayerAndLeaderChoice();
+                return;
+            }
+            if(latestLine.replaceAll("--", "").length() != (latestLine.length() - 6)){
+                out.println("RESPONSE--PLAYERCHOICE--INVALIDMESSAGEFORMAT--");
+                getPlayerAndLeaderChoice();
+                return;
+            }
+
+            submittedUserToken = latestLine.substring(14, latestLine.indexOf("--", 14));
+            latestLine = latestLine.replaceFirst("PLAYERCHOICE--" + submittedUserToken + "--", "");
+            submittedGameToken = latestLine.substring(0, latestLine.indexOf("--"));
+            latestLine = latestLine.replaceFirst(submittedGameToken + "--", "");
+            playerChoice = latestLine;
+            if (latestLine.contains("--")) {
+                System.err.println("Something is wonky with parsing the PLAYERCHOICE message. Extra hyphens at the end?");
+            }
+
+            if (!submittedUserToken.equals(thisUser.getUserToken())) {
+                out.println("RESPONSE--PLAYERCHOICE--USERNOTLOGGEDIN--");
+                getPlayerAndLeaderChoice();
+                return;
+            } else if (!submittedGameToken.equals(thisUser.getCurrentGame().getGameToken())) {
+                out.println("RESPONSE--PLAYERSUGGESTION--INVALIDGAMETOKEN--");
+                getPlayerAndLeaderChoice();
+                return;
+            } else {
+                thisUser.playerChoice = playerChoice;
+                thisUser.hasChosen = true;
+
+                if (thisUser == thisUser.getCurrentGame().getLeader()) {
+                    synchronized (this) {
+                        while(!checkIfAllChoicesAreIn());
+                    }
+
+                    applyGameLogic();
+                } else {
+                    waitForGameLogic();
+                }
+                return;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //only called by leader
+    public void applyGameLogic() {
+        synchronized (this) {
+            for(int j = 0; j < thisUser.getCurrentGame().players.size(); j++) {
+                thisUser.getCurrentGame().players.get(j).resultMessage = "";
+            }
+
+        }
+        for (int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+            synchronized (this) {
+                if (thisUser.getCurrentGame().players.get(i).playerChoice.equals(thisUser.getCurrentGame().players.get(i).correctAnswer)) {
+                    thisUser.getCurrentGame().players.get(i).resultMessage = thisUser.getCurrentGame().players.get(i).resultMessage + "You got it right!";
+                    thisUser.getCurrentGame().players.get(i).setCumulativeScore(10 + thisUser.getCurrentGame().players.get(i).getCumulativeScore());
+                } else {
+                    User fooledBy = null;
+                    for (int j = 0; j < thisUser.getCurrentGame().players.size(); j++) {
+                        if (thisUser.getCurrentGame().players.get(i).playerChoice.equals(thisUser.getCurrentGame().players.get(j).suggestion)) {
+                            fooledBy = thisUser.getCurrentGame().players.get(j);
+                        }
+                    }
+                    fooledBy.setCumulativeScore(5 + fooledBy.getCumulativeScore());
+                    fooledBy.setNumTimesFooledOthers(fooledBy.getNumTimesFooledOthers() + 1);
+
+                    thisUser.getCurrentGame().players.get(i).setNumTimesFooledByOthers(thisUser.getCurrentGame().players.get(i).getNumTimesFooledByOthers() + 1);
+
+                    fooledBy.resultMessage = fooledBy.resultMessage + "You fooled " + thisUser.getCurrentGame().players.get(i).getUsername() + ".";
+                    thisUser.getCurrentGame().players.get(i).resultMessage = thisUser.getCurrentGame().players.get(i).resultMessage + "You were fooled by " + fooledBy.getUsername() + ".";
+
+                }
+            }
+
+        }
+
+        String roundResultMessage = "ROUNDRESULT";
+
+        for (int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+            synchronized (this) {
+                roundResultMessage = roundResultMessage + "--" + thisUser.getCurrentGame().players.get(i).getUsername() + "--" + thisUser.getCurrentGame().players.get(i).resultMessage + "--" + thisUser.getCurrentGame().players.get(i).getCumulativeScore() + "--" + thisUser.getCurrentGame().players.get(i).getNumTimesFooledOthers() + "--" + thisUser.getCurrentGame().players.get(i).getNumTimesFooledByOthers();
+            }
+        }
+        synchronized (this) {
+            thisUser.getCurrentGame().roundResultMessage = roundResultMessage;
+        }
+
+        Server.writeUserDatabase();
+        synchronized (this) {
+            thisUser.getCurrentGame().gameLogicDone = true;
+        }
+
+
+
+        for(int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+            synchronized (this) {
+                thisUser.getCurrentGame().players.get(i).hasChosen = false;
+            }
+
+        }
+
+
+
+        sendRoundResult();
+        return;
+    }
+
+    //only called by players
+    public void waitForGameLogic() {
+        synchronized (this) {
+            while (!thisUser.getCurrentGame().gameLogicDone);
+        }
+
+        sendRoundResult();
+        return;
+    }
+
+    //everyone calls this method
+    public void sendRoundResult() {
+        synchronized (this) {
+            out.println(thisUser.getCurrentGame().roundResultMessage);
+        }
+
+        sendNewWordOrQuit();
+        return;
+    }
+
+    //constructs the roundOptions message for everyone, and clears all playerSuggestions
+    public void setUpRoundOptions() {
+        long s = System.nanoTime();
+        String msg = "ROUNDOPTIONS--";
+        Collections.shuffle(thisUser.getCurrentGame().playerSuggestions, new Random(s));
+
+        for(int i = 0; i < thisUser.getCurrentGame().playerSuggestions.size(); i ++) {
+            if (i == thisUser.getCurrentGame().playerSuggestions.size() - 1) {
+                msg = msg + thisUser.getCurrentGame().playerSuggestions.get(i);
+                break;
+            }
+            msg = msg + thisUser.getCurrentGame().playerSuggestions.get(i) + "--";
+        }
+
+        for (int i = 0; i < thisUser.getCurrentGame().players.size(); i++) {
+            synchronized (this) {
+                thisUser.getCurrentGame().players.get(i).roundOptionsMessage = msg;
+            }
+
+        }
+
+        thisUser.getCurrentGame().clearPlayerSuggestions();
+        return;
+    }
+
+    public boolean checkIfAllSuggestionsAreIn() {
+
+            for (int i = 0; i < thisUser.getCurrentGame().players.size(); i ++) {
+                synchronized (this) {
+                    if (thisUser.getCurrentGame().players.get(i).hasSentSuggestion == false) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+
+
+    }
+
+    public boolean checkIfAllChoicesAreIn() {
+        synchronized (this) {
+            for (int i = 0; i < thisUser.getCurrentGame().players.size(); i ++) {
+                if (thisUser.getCurrentGame().players.get(i).hasChosen == false) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     public Game findGame(String gameToken) {
@@ -395,6 +754,22 @@ public class RequestHandler extends Thread {
             }
         }
         return false;
+    }
+
+    public void logout() {
+        out.println("RESPONSE--LOGOUT--SUCCESS--");
+        interrupt();
+        try {
+            if (out != null)
+                out.close();
+            if (in != null)
+                in.close();
+            clientSocket.close();
+        } catch (IOException e) {
+            System.out.println("Unexpected IOException when closing socket of client" + clientId + "\n" + e.getMessage());
+
+        }
+        return;
     }
 
 
